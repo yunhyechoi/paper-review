@@ -57,6 +57,67 @@ Seq2Seq 모델에서는 입력 문장을 하나의 context vector로 압축한�
 
 </br>
 
+# Transformer
+Attention은 주로 RNN 계열 모델과 함께 사용되는데, 이때 가장 큰 문제점은 RNN의 sequential한 특성으로 인해 병렬화가 불가능하다는 것이다. 
+Transformer에서는 RNN 없이 **attention만을 이용**하여 계산의 효율성을 극대화한다.
+
+
+## Model Architecture
+모델 구조도를 보면 RNN 모델 없이 attention으로만 이루어진 것을 볼 수 있다.
+
+![image](https://github.com/yunhyechoi/paper-review/assets/166207923/546dbdd5-7eed-42ec-8371-1af4f10cbb64)
+
+기본적으로 Encoder-Decoder 구조를 따른다. 
+- Encoder : 입력 문장을 수치형 벡터로 변환
+  - multi-head attention
+  - feed forward network
+
+- Decoder : 인코딩 값을 기반으로 각 time별 출력값 생성
+  - maked multi-head attention
+  - multi-head attention
+  - feed forward network 
+
+각 sublayer는 다음과 같이 `residual connection`(잔차 연결)과 `layer normalization`(층 정규화) 과정을 거친다. 
+- $LayerNorm(x + Sublayer(x))$
+
+</br>
+
+## Attention
+attention은 쉽게 말해서 예측해야 할 단어와 연관이 있는 단어에 좀 더 집중해서 보겠다는 의미이다. 
+Transformer 에서는 scaled dot production attention을 사용하며, 이를 함수로 표현하면 다음과 같다. 
+$$Attention(Q,K,V) = softmax(\frac{QK^T}{\sqrt{d_k}})V$$
+- Query : 관련된 부분을 찾고 싶은 벡터
+- Key : Query와 얼마나 연관이 있는지 확인해야 하는 벡터
+- Value : Query와 Key간의 유사도를 가중치로 곱해줄 벡터
+
+즉, attention은 (query와 key의 유사도가 높은) value에 집중하도록 하는 연산 메커니즘이다. 
+
+</br>
+
+### Multi-Head Attention
+Transformer이 제안된 가장 큰 이유가 바로 병렬화였다. multi-head attention은 여러 head로 나눠서 attention 계산을 병렬적으로 수행하는 알고리즘이다.
+
+![image](https://github.com/yunhyechoi/paper-review/assets/166207923/e80cd731-bde6-4132-8527-53288f635767)
+
+multi-head attention을 수식으로 나타내면 다음과 같다. 
+수식을 간단하게 해석해보면, 각 head는 Q,K,V를 h개의 다른 방식(가중치)로 projection하여 생성한 벡터이며, 이렇게 나눠진 head에 대하여 각각 attention을 수행한 후, 연결하는 방식이다. 
+
+$$MultiHead(Q,K,V) = Concat(head_1,...,head_h)W^O$$
+
+$$\text{where, } head_i = Attention(QW_i^Q, KW_i^K, VW_i^V)$$
+
+
+논문에서는 h=8로 지정하여 총 8번의 연산을 병렬적으로 수행한다. 그냥 한번에 계산이 가능한데도 왜 이런 방법을 사용한걸까? 
+동일한 입력에 대해 h번 만큼 나누어서 연산을 수행한다는 것은 h가지의 다양한 관점에서 시퀀스를 표현할 수 있다는 것을 의미한다. 
+이러한 이유로 transformer에서는 multi-head 방식을 사용하고 있다.
+
+### Masked Multi-Head Attention
+
+## Feed Forward Network
+
+## Positional Encoding
+
+
 # 참고 자료
 - [위키독스 - 딥러닝을 이용한 자연어 처리 입문](https://wikidocs.net/22893)
 - [NMT 시각화 영상](https://jalammar.github.io/visualizing-neural-machine-translation-mechanics-of-seq2seq-models-with-attention/)
