@@ -100,24 +100,72 @@ Transformer이 제안된 가장 큰 이유가 바로 병렬화였다. multi-head
 ![image](https://github.com/yunhyechoi/paper-review/assets/166207923/e80cd731-bde6-4132-8527-53288f635767)
 
 multi-head attention을 수식으로 나타내면 다음과 같다. 
-수식을 간단하게 해석해보면, 각 head는 Q,K,V를 h개의 다른 방식(가중치)로 projection하여 생성한 벡터이며, 이렇게 나눠진 head에 대하여 각각 attention을 수행한 후, 연결하는 방식이다. 
+수식을 간단하게 해석해보면, 각 head는 Q,K,V를 h개의 다른 방식(가중치)로 projection하여 생성한 벡터이며, 이렇게 나눠진 head에 대하여 각각 attention을 수행한 후, 연결하는 방식이다. 논문에서는 h=8로 지정하여 총 8번의 연산을 병렬적으로 수행한다.
 
 $$MultiHead(Q,K,V) = Concat(head_1,...,head_h)W^O$$
 
 $$\text{where, } head_i = Attention(QW_i^Q, KW_i^K, VW_i^V)$$
 
+</br>
 
-논문에서는 h=8로 지정하여 총 8번의 연산을 병렬적으로 수행한다. 그냥 한번에 계산이 가능한데도 왜 이런 방법을 사용한걸까? 
-동일한 입력에 대해 h번 만큼 나누어서 연산을 수행한다는 것은 h가지의 다양한 관점에서 시퀀스를 표현할 수 있다는 것을 의미한다. 
-이러한 이유로 transformer에서는 multi-head 방식을 사용하고 있다.
+한번에 계산이 가능한데도 왜 이런 방법을 사용한걸까? 
+> 동일한 입력에 대해 h번 만큼 나누어서 연산을 수행한다는 것은 h가지의 다양한 관점에서 시퀀스를 표현할 수 있다는 것을 의미한다.
+> 이러한 이유로 transformer에서는 multi-head 방식을 사용하고 있다.
+
+</br>
 
 ### Masked Multi-Head Attention
+transformer의 디코더 초기에 등장하는 layer로, masked가 붙었다. 말그대로 '가려진' 상태에서 수행되는 multi-head attention이다. 
+가리는 이유는 아주 간단하다. 어텐션 과정에서 미래의 값을 사용하지 못하도록 하기 위함이다. 
+
+학습 과정에는 디코더의 인풋으로 번역된 문장이 들어오게 된다. 따라서 다음에 나올 단어까지 포함하여 어텐션을 수행하게 되면 정답을 보여주는 격이 된다.
+따라서 디코더에서는 미래의 나올 단어를 참고하지 못하도록 masking하는 과정이 추가된다. 
+
+마스킹하는 방법은 여러가지가 있지만, 트랜스포머에서는 $- \infty$를 곱하는 방식을 사용한다. 
+attention 과정에서 $- \infty$를 곱하는 이유는 이 값이 softmax를 지나게 되면 0으로 변환되기 때문이다. 
+
+
+![image](https://github.com/yunhyechoi/paper-review/assets/166207923/17955812-3bd4-4898-87fd-5410f2375ba3)
+
+</br>
 
 ## Feed Forward Network
+FFNN 수식은 다음과 같다.
+$$FFNN(x) = ReLU(xW_1 + b_1)W_2 + b_2 = max(0,xW_1 + b_1)W_2 + b_2$$
+- linear transformation : $f_1 = xW_1 + b_1$
+- activation : $f_2 = ReLU(f_1)$
+- linear transformation : $f_3 = f_2W_2 + b_2$
+
+</br>
 
 ## Positional Encoding
+트랜스포머에서는 RNN 없이 어텐션만 사용한다. 이 때 문제점은 입력되는 단어들의 순서를 모델이 인식하지 못한다는 것이다.
+따라서 인풋으로 들어가는 단어의 위치 정보를 주기 위하여 positional encoding 값을 단어 임베딩에 더해준다.
 
+트랜스포머에서 사용하는 positional encoding 식은 다음과 같다. (i : 인코딩 벡터의 차원 / pos : 단어 순서)
+$$PE_{(pos,2i)} = sin(frac{pos}{10000^{2i/d_{model}}})$$
+$$PE_{(pos,2i+1)} = cos(frac{pos}{10000^{2i/d_{model}}})$$
+
+</br>
+
+위의 식을 통해 알 수 있는 특징은 다음과 같다.
+- i가 짝수일 때는 sine 함수, i가 홀수일 때는 cosine 함수를 사용한다.
+- i가 커질수록 sine/cosine 함수의 주기가 길어진다.
+
+
+![image](https://github.com/yunhyechoi/paper-review/assets/166207923/ddfaf4c8-73d2-4634-a1fc-4fc713de7d2a)
+
+</br>
+
+이미지를 통해 알 수 있듯이 i가 큰 경우에는 position에 따른 차이가 크지 않고, i가 작아질수록 그 차이가 커진다.
+그럼 이걸로 어떻게 단어의 위치를 파악할까?
+> i=4에서 해당 단어가 앞쪽에 위치하는지, 뒷쪽에 위치하는지 정도를 가늠한다. 그리고 i=3에서 앞쪽 중에서도 어느정도 위치인지 대략적으로 파악할 수 있다.
+> 이런식으로 각 차원의 정보를 결합함으로써 그 범위를 좁혀간다면 해당 토큰의 위치를 확인할 수 있을 것이다.
+
+
+</br>
 
 # 참고 자료
 - [위키독스 - 딥러닝을 이용한 자연어 처리 입문](https://wikidocs.net/22893)
 - [NMT 시각화 영상](https://jalammar.github.io/visualizing-neural-machine-translation-mechanics-of-seq2seq-models-with-attention/)
+- [트랜스포머 파헤치기 - positional encoding](https://www.blossominkyung.com/deeplearning/transfomer-positional-encoding)
