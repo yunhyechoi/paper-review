@@ -8,10 +8,12 @@ LLM은 general intelligence로, 여러 application에 적용하고자 하는 시
 
 </br>
 
-따라서 RecAI는 LLM의 자연어 처리 능력과 RS의 전문적인 기능을 결합함으로써 다음의 기능을 제공한다.
-- 추천에 대한 설명
-- 대화를 통한 상품 추천
-- 사용자 제어 강화
+따라서 RecAI는 LLM의 자연어 처리 능력과 RS의 전문적인 기능을 결합한 몇가지 application scenario를 제시한다.
+- Recommender AI Agent
+- Recommendation-oriented LM
+- Knowledge Plugin
+- RecExplainer
+- Evaluator
 
 </br>
 
@@ -77,5 +79,12 @@ Llama-7B모델을 사용하며 학습 데이터셋은 GPT-4가 생성한 [지시
 </br>
 
 # Recommendation-Oriented Language Model
+기존의 추천시스템은 정형화된 데이터만을 사용한다. 하지만 LLM은 정형 데이터 뿐만 아니라 비정형적인 대화에서 강점이 드러난다.
 
+일반적으로 사용자들은 대화를 통해 명확한 선호도 뿐만 아니라 미묘한 선호도를 모두 표출하게 된다. 
+따라서 LLM을 이용하여 대화에서의 언어적 의도를 해석하고자 한다. 
+
+### 1. RecLM-emb
+
+### 2. RecLM-gen
 
